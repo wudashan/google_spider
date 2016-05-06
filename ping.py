@@ -1,4 +1,4 @@
-# author: wudashan
+# -*- coding: utf-8 -*-
 import requests
 import MySQLdb
 
@@ -6,17 +6,15 @@ requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS = 'ALL'
 requests.packages.urllib3.disable_warnings()
 
 
-def is_timeout(url):
+def can_access(url):
     try:
         requests.get(url, timeout=3, verify=False)
-        return False
-    except requests.exceptions.RequestException, e:
-        print e
         return True
+    except requests.exceptions.RequestException:
+        return False
 
 
-def main():
-    print "google address ping start!"
+def ping():
     conn = MySQLdb.connect(
         host='127.0.0.1',
         port=3306,
@@ -25,18 +23,17 @@ def main():
         db='google_spider',
     )
     cur = conn.cursor()
-    cur.execute("SELECT * FROM googleUrl")
+    cur.execute('SELECT * FROM googleUrl')
     results = cur.fetchall()
     for row in results:
-        if (not is_timeout(row[1])):
-            cur.execute("UPDATE googleUrl SET updatetime = now(), isvalid = 1 WHERE url='" + row[1] + "'")
+        if can_access(row[1]):
+            cur.execute('UPDATE googleUrl SET updatetime = now(), isvalid = 1 WHERE url="' + row[1] + '"')
         else:
-            cur.execute("UPDATE googleUrl SET updatetime = now(), isvalid = 0 WHERE url='" + row[1] + "'")
+            cur.execute('UPDATE googleUrl SET updatetime = now(), isvalid = 0 WHERE url="' + row[1] + '"')
     cur.close()
     conn.commit()
     conn.close()
-    print "google address ping end!"
 
 
 if __name__ == '__main__':
-    main()
+    ping()
